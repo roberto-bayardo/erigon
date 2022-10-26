@@ -34,6 +34,7 @@ import (
 	"github.com/ledgerwatch/erigon/crypto"
 	"github.com/ledgerwatch/erigon/params"
 	"github.com/ledgerwatch/erigon/rlp"
+	"github.com/protolambda/ztyp/codec"
 )
 
 var (
@@ -49,6 +50,7 @@ const (
 	AccessListTxType
 	DynamicFeeTxType
 	StarknetType
+	BlobTxType = 5
 )
 
 // Transaction is an Ethereum transaction.
@@ -523,4 +525,31 @@ func (m *Message) ChangeGas(globalGasCap, desiredGas uint64) {
 	}
 
 	m.gasLimit = gas
+}
+
+type TxWrapData interface {
+	copy() TxWrapData
+	kzgs() BlobKzgs
+	blobs() Blobs
+	aggregatedProof() KZGProof
+	encodeTyped(w io.Writer, txdata Transaction) error
+	sizeWrapData() common.StorageSize
+	validateBlobTransactionWrapper(inner Transaction) error
+}
+
+func DecodeSSZ(data []byte, dest codec.Deserializable) error {
+	return dest.Deserialize(codec.NewDecodingReader(bytes.NewReader(data), uint64(len(data))))
+}
+
+func EncodeSSZ(w io.Writer, obj codec.Serializable) error {
+	return obj.Serialize(codec.NewEncodingWriter(w))
+}
+
+// copyAddressPtr copies an address.
+func copyAddressPtr(a *common.Address) *common.Address {
+	if a == nil {
+		return nil
+	}
+	cpy := *a
+	return &cpy
 }
