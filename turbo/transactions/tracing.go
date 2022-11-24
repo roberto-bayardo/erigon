@@ -23,6 +23,7 @@ import (
 	"github.com/ledgerwatch/erigon/params"
 	"github.com/ledgerwatch/erigon/turbo/rpchelper"
 	"github.com/ledgerwatch/erigon/turbo/services"
+	"github.com/ledgerwatch/log/v3"
 )
 
 type BlockGetter interface {
@@ -71,7 +72,16 @@ func ComputeTxEnv(ctx context.Context, engine consensus.EngineReader, block *typ
 	// Recompute transactions up to the target index.
 	signer := types.MakeSigner(cfg, block.NumberU64())
 
-	BlockContext := core.NewEVMBlockContext(header, core.GetHashFn(header, getHeader), engine, nil)
+	parentHeader, err := headerReader.HeaderByHash(ctx, dbtx, header.ParentHash)
+	if err != nil {
+		// TODO(eip-4844): Do we need to propagate this error?
+		log.Error("Can't get parent block's header:", err)
+	}
+	var excessDataGas *big.Int
+	if parentHeader != nil {
+		excessDataGas = parentHeader.ExcessDataGas
+	}
+	BlockContext := core.NewEVMBlockContext(header, excessDataGas, core.GetHashFn(header, getHeader), engine, nil)
 	vmenv := vm.NewEVM(BlockContext, evmtypes.TxContext{}, statedb, cfg, vm.Config{})
 	rules := vmenv.ChainRules()
 	for idx, tx := range block.Transactions() {

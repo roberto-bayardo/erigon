@@ -449,13 +449,24 @@ func ExecV3(ctx context.Context,
 		}
 	}
 
-	var b *types.Block
+	var b, parentBlock *types.Block
 	var blockNum uint64
 Loop:
 	for blockNum = block; blockNum <= maxBlockNum; blockNum++ {
 		t := time.Now()
 
 		inputBlockNum.Store(blockNum)
+		rules := chainConfig.Rules(blockNum)
+		if b == nil {
+			if blockNum >= 0 {
+				parentBlock, err = blockWithSenders(chainDb, applyTx, blockReader, blockNum-1)
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			parentBlock = b
+		}
 		b, err = blockWithSenders(chainDb, applyTx, blockReader, blockNum)
 		if err != nil {
 			return err
@@ -519,6 +530,7 @@ Loop:
 			txTask := &exec22.TxTask{
 				BlockNum:        blockNum,
 				Header:          header,
+				ExcessDataGas:   parentBlock.ExcessDataGas(),
 				Coinbase:        b.Coinbase(),
 				Uncles:          b.Uncles(),
 				Rules:           rules,
@@ -900,6 +912,7 @@ func reconstituteStep(last bool,
 
 	var inputTxNum uint64 = startTxNum
 	var b *types.Block
+	var b, parentBlock *types.Block
 	var txKey [8]byte
 	getHeaderFunc := func(hash common2.Hash, number uint64) (h *types.Header) {
 		if err = chainDb.View(ctx, func(tx kv.Tx) error {
@@ -916,6 +929,8 @@ func reconstituteStep(last bool,
 	}
 	for bn = startBlockNum; bn <= endBlockNum; bn++ {
 		t = time.Now()
+		rules := chainConfig.Rules(bn)
+		parentBlock = b
 		b, err = blockWithSenders(chainDb, nil, blockReader, bn)
 		if err != nil {
 			return err
@@ -956,6 +971,9 @@ func reconstituteStep(last bool,
 					Final:           txIndex == len(txs),
 					GetHashFn:       getHashFn,
 					EvmBlockContext: blockContext,
+				}
+				if parentBlock != nil {
+					txTask.ExcessDataGas = parentBlock.ExcessDataGas()
 				}
 				if txIndex >= 0 && txIndex < len(txs) {
 					txTask.Tx = txs[txIndex]
