@@ -140,7 +140,7 @@ func (rw *Worker) RunTxTask(txTask *exec22.TxTask) {
 			systemcontracts.UpgradeBuildInSystemContract(rw.chainConfig, header.Number, ibs)
 		}
 		syscall := func(contract common.Address, data []byte) ([]byte, error) {
-			return core.SysCallContract(contract, data, *rw.chainConfig, ibs, header, rw.engine, false /* constCall */)
+			return core.SysCallContract(contract, data, *rw.chainConfig, ibs, header, txTask.ExcessDataGas, rw.engine, false /* constCall */)
 		}
 		rw.engine.Initialize(rw.chainConfig, rw.chain, rw.epoch, header, ibs, txTask.Txs, txTask.Uncles, syscall)
 	} else if txTask.Final {
@@ -148,7 +148,7 @@ func (rw *Worker) RunTxTask(txTask *exec22.TxTask) {
 			//fmt.Printf("txNum=%d, blockNum=%d, finalisation of the block\n", txTask.TxNum, txTask.BlockNum)
 			// End of block transaction in a block
 			syscall := func(contract common.Address, data []byte) ([]byte, error) {
-				return core.SysCallContract(contract, data, *rw.chainConfig, ibs, header, rw.engine, false /* constCall */)
+				return core.SysCallContract(contract, data, *rw.chainConfig, ibs, header, txTask.ExcessDataGas, rw.engine, false /* constCall */)
 			}
 			if _, _, err := rw.engine.Finalize(rw.chainConfig, header, ibs, txTask.Txs, txTask.Uncles, nil /* receipts */, rw.epoch, rw.chain, syscall); err != nil {
 				//fmt.Printf("error=%v\n", err)
