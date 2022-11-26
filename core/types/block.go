@@ -522,6 +522,18 @@ type headerMarshaling struct {
 	Hash          common.Hash `json:"hash"` // adds call to Hash() in MarshalJSON
 }
 
+// SetExcessDataGas sets the excess_data_gas field in the header
+func (h *Header) SetExcessDataGas(v *big.Int) {
+	h.ExcessDataGas = new(big.Int)
+	if v != nil {
+		h.ExcessDataGas.Set(v)
+	}
+	if h.WithdrawalsHash == nil {
+		// leaving this nil would result in a buggy encoding
+		h.WithdrawalsHash = &EmptyRootHash
+	}
+}
+
 // Hash returns the block hash of the header, which is simply the keccak256 hash of its
 // RLP encoding.
 func (h *Header) Hash() common.Hash {
@@ -532,6 +544,8 @@ var headerSize = common.StorageSize(reflect.TypeOf(Header{}).Size())
 
 // Size returns the approximate memory used by all internal contents. It is used
 // to approximate and limit the memory consumption of various caches.
+//
+// TODO(EIP-4844): Account for excessDataGas and Withdrawals hash storage
 func (h *Header) Size() common.StorageSize {
 	s := headerSize + common.StorageSize(len(h.Extra)+bitsToBytes(h.Difficulty.BitLen())+bitsToBytes(h.Number.BitLen()))
 	if h.BaseFee != nil {

@@ -233,8 +233,9 @@ type ChainConfig struct {
 	TerminalTotalDifficultyPassed bool     `json:"terminalTotalDifficultyPassed,omitempty"` // Disable PoW sync for networks that have already passed through the Merge
 	MergeNetsplitBlock            *big.Int `json:"mergeNetsplitBlock,omitempty"`            // Virtual fork after The Merge to use as a network splitter; see FORK_NEXT_VALUE in EIP-3675
 
-	ShanghaiTime *big.Int `json:"shanghaiTime,omitempty"` // Shanghai switch time (nil = no fork, 0 = already activated)
-	CancunTime   *big.Int `json:"cancunTime,omitempty"`   // Cancun switch time (nil = no fork, 0 = already activated)
+	ShanghaiTime  *big.Int `json:"shanghaiTime,omitempty"`  // Shanghai switch time (nil = no fork, 0 = already activated)
+	CancunTime    *big.Int `json:"cancunTime,omitempty"`    // Cancun switch time (nil = no fork, 0 = already activated)
+	ShardingBlock *big.Int `json:"shanghaiBlock,omitempty"` // Proto-danksharding switch block (nil = no fork, 0 = already activated) TODO: Update to time
 
 	// Parlia fork blocks
 	RamanujanBlock  *big.Int `json:"ramanujanBlock,omitempty" toml:",omitempty"`  // ramanujanBlock switch block (nil = no fork, 0 = already activated)
@@ -623,6 +624,11 @@ func (c *ChainConfig) IsCancun(time uint64) bool {
 	return isForked(c.CancunTime, time)
 }
 
+// IsSharding returns whether num is either equal to the fork block that activates proto-danksharding (EIP-4844)
+func (c *ChainConfig) IsSharding(num uint64) bool {
+	return isForked(c.ShardingBlock, num)
+}
+
 func (c *ChainConfig) IsEip1559FeeCollector(num uint64) bool {
 	return c.Eip1559FeeCollector != nil && isForked(c.Eip1559FeeCollectorTransition, num)
 }
@@ -845,6 +851,7 @@ type Rules struct {
 	IsByzantium, IsConstantinople, IsPetersburg, IsIstanbul bool
 	IsBerlin, IsLondon, IsShanghai, IsCancun                bool
 	IsNano, IsMoran, IsGibbs                                bool
+	IsSharding                                              bool
 	IsEip1559FeeCollector                                   bool
 	IsParlia, IsStarknet, IsAura                            bool
 }
@@ -868,6 +875,7 @@ func (c *ChainConfig) Rules(num uint64, time uint64) *Rules {
 		IsLondon:              c.IsLondon(num),
 		IsShanghai:            c.IsShanghai(time),
 		IsCancun:              c.IsCancun(time),
+		IsSharding:            c.IsSharding(num),
 		IsNano:                c.IsNano(num),
 		IsMoran:               c.IsMoran(num),
 		IsEip1559FeeCollector: c.IsEip1559FeeCollector(num),
