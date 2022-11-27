@@ -321,7 +321,7 @@ func ExecuteBlockEphemerally(
 	}
 	if !vmConfig.ReadOnly {
 		txs := block.Transactions()
-		if _, _, _, err := FinalizeBlockExecution(engine, stateReader, block.Header(), txs, block.Uncles(), stateWriter, chainConfig, ibs, receipts, block.Withdrawals(), excessDataGas, epochReader, chainReader, false); err != nil {
+		if _, _, _, err := FinalizeBlockExecution(engine, stateReader, block.Header(), excessDataGas, txs, block.Uncles(), stateWriter, chainConfig, ibs, receipts, block.Withdrawals(), epochReader, chainReader, false); err != nil {
 			return nil, err
 		}
 	}
@@ -437,7 +437,7 @@ func ExecuteBlockEphemerallyBor(
 	}
 	if !vmConfig.ReadOnly {
 		txs := block.Transactions()
-		if _, _, _, err := FinalizeBlockExecution(engine, stateReader, block.Header(), txs, block.Uncles(), stateWriter, chainConfig, ibs, receipts, block.Withdrawals(), excessDataGas, epochReader, chainReader, false); err != nil {
+		if _, _, _, err := FinalizeBlockExecution(engine, stateReader, block.Header(), excessDataGas, txs, block.Uncles(), stateWriter, chainConfig, ibs, receipts, block.Withdrawals(), epochReader, chainReader, false); err != nil {
 			return nil, err
 		}
 	}
@@ -483,7 +483,7 @@ func rlpHash(x interface{}) (h common.Hash) {
 	return h
 }
 
-func SysCallContract(contract common.Address, data []byte, chainConfig params.ChainConfig, ibs *state.IntraBlockState, header *types.Header, engine consensus.EngineReader, constCall bool) (result []byte, err error) {
+func SysCallContract(contract common.Address, data []byte, chainConfig params.ChainConfig, ibs *state.IntraBlockState, header *types.Header, excessDataGas *big.Int, engine consensus.EngineReader, constCall bool) (result []byte, err error) {
 	if chainConfig.DAOForkSupport && chainConfig.DAOForkBlock != nil && chainConfig.DAOForkBlock.Cmp(header.Number) == 0 {
 		misc.ApplyDAOHardFork(ibs)
 	}
@@ -527,7 +527,7 @@ func SysCallContract(contract common.Address, data []byte, chainConfig params.Ch
 }
 
 // SysCreate is a special (system) contract creation methods for genesis constructors.
-func SysCreate(contract common.Address, data []byte, chainConfig params.ChainConfig, ibs *state.IntraBlockState, header *types.Header) (result []byte, err error) {
+func SysCreate(contract common.Address, data []byte, chainConfig params.ChainConfig, ibs *state.IntraBlockState, header *types.Header, excessDataGas *big.Int) (result []byte, err error) {
 	if chainConfig.DAOForkSupport && chainConfig.DAOForkBlock != nil && chainConfig.DAOForkBlock.Cmp(header.Number) == 0 {
 		misc.ApplyDAOHardFork(ibs)
 	}
@@ -545,7 +545,7 @@ func SysCreate(contract common.Address, data []byte, chainConfig params.ChainCon
 	// Create a new context to be used in the EVM environment
 	author := &contract
 	txContext := NewEVMTxContext(msg)
-	blockContext := NewEVMBlockContext(header, GetHashFn(header, nil), nil, author)
+	blockContext := NewEVMBlockContext(header, excessDataGas, GetHashFn(header, nil), nil, author)
 	evm := vm.NewEVM(blockContext, txContext, ibs, &chainConfig, vmConfig)
 
 	ret, _, err := evm.SysCreate(

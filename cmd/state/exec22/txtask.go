@@ -2,6 +2,7 @@ package exec22
 
 import (
 	"bytes"
+	"math/big"
 
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon/common"
@@ -45,7 +46,8 @@ type TxTask struct {
 	TraceFroms         map[common.Address]struct{}
 	TraceTos           map[common.Address]struct{}
 
-	UsedGas uint64
+	UsedGas       uint64
+	ExcessDataGas *big.Int
 }
 
 type TxTaskQueue []*TxTask

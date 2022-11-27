@@ -456,7 +456,7 @@ Loop:
 		t := time.Now()
 
 		inputBlockNum.Store(blockNum)
-		rules := chainConfig.Rules(blockNum)
+		rules := chainConfig.Rules(blockNum, b.Time())
 		if b == nil {
 			if blockNum >= 0 {
 				parentBlock, err = blockWithSenders(chainDb, applyTx, blockReader, blockNum-1)
@@ -487,7 +487,7 @@ Loop:
 			defer getHashFnMute.Unlock()
 			return f(n)
 		}
-		blockContext := core.NewEVMBlockContext(header, getHashFn, engine, nil /* author */)
+		blockContext := core.NewEVMBlockContext(header, parentBlock.ExcessDataGas(), getHashFn, engine, nil /* author */)
 
 		if parallel {
 			select {
@@ -517,7 +517,6 @@ Loop:
 				}
 			}()
 		}
-		rules := chainConfig.Rules(blockNum, b.Time())
 		var gasUsed uint64
 		for txIndex := -1; txIndex <= len(txs); txIndex++ {
 			select {
@@ -911,7 +910,6 @@ func reconstituteStep(last bool,
 	}()
 
 	var inputTxNum uint64 = startTxNum
-	var b *types.Block
 	var b, parentBlock *types.Block
 	var txKey [8]byte
 	getHeaderFunc := func(hash common2.Hash, number uint64) (h *types.Header) {
@@ -929,7 +927,7 @@ func reconstituteStep(last bool,
 	}
 	for bn = startBlockNum; bn <= endBlockNum; bn++ {
 		t = time.Now()
-		rules := chainConfig.Rules(bn)
+		rules := chainConfig.Rules(bn, b.Time())
 		parentBlock = b
 		b, err = blockWithSenders(chainDb, nil, blockReader, bn)
 		if err != nil {
@@ -951,8 +949,7 @@ func reconstituteStep(last bool,
 			defer getHashFnMute.Unlock()
 			return f(n)
 		}
-		blockContext := core.NewEVMBlockContext(header, getHashFn, engine, nil /* author */)
-		rules := chainConfig.Rules(bn, b.Time())
+		blockContext := core.NewEVMBlockContext(header, parentBlock.ExcessDataGas(), getHashFn, engine, nil /* author */)
 
 		for txIndex := -1; txIndex <= len(txs); txIndex++ {
 			if bitmap.Contains(inputTxNum) {

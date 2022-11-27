@@ -784,6 +784,11 @@ func (m callMsg) Data() []byte                 { return m.CallMsg.Data }
 func (m callMsg) AccessList() types.AccessList { return m.CallMsg.AccessList }
 func (m callMsg) IsFree() bool                 { return false }
 
+// TODO(eip-4844): Do we need to support presence of the Blob transaction fields below? Right now
+// they are just stubbed out.
+func (m callMsg) MaxFeePerDataGas() *uint256.Int { return new(uint256.Int) }
+func (m callMsg) DataHashes() []common.Hash      { return nil }
+
 // filterBackend implements filters.Backend to support filtering for logs without
 // taking bloom-bits acceleration structures into account.
 type filterBackend struct {

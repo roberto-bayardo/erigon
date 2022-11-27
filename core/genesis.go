@@ -409,7 +409,7 @@ func (g *Genesis) ToBlock() (*types.Block, *state.IntraBlockState, error) {
 			}
 
 			if len(account.Constructor) > 0 {
-				_, err := SysCreate(addr, account.Constructor, *g.Config, statedb, head)
+				_, err := SysCreate(addr, account.Constructor, *g.Config, statedb, head, nil)
 				if err != nil {
 					panic(err)
 				}

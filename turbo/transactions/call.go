@@ -114,7 +114,7 @@ func NewEVMBlockContext(engine consensus.EngineReader, header *types.Header, req
 	} else if parentHeader != nil {
 		excessDataGas = parentHeader.ExcessDataGas
 	}
-	return core.NewEVMBlockContext(header, extraDataGas, getHashGetter(requireCanonical, tx, headerReader), engine, nil /* author */)
+	return core.NewEVMBlockContext(header, excessDataGas, getHashGetter(requireCanonical, tx, headerReader), engine, nil /* author */)
 }
 
 func getHashGetter(requireCanonical bool, tx kv.Tx, headerReader services.HeaderReader) func(uint64) common.Hash {

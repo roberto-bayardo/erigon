@@ -387,11 +387,9 @@ func (c *Clique) FinalizeAndAssemble(chainConfig *params.ChainConfig, header *ty
 	txs types.Transactions, uncles []*types.Header, receipts types.Receipts, withdrawals []*types.Withdrawal,
 	e consensus.EpochReader, chain consensus.ChainHeaderReader, syscall consensus.SystemCall, call consensus.Call,
 ) (*types.Block, types.Transactions, types.Receipts, error) {
-	// Finalize block
-	outTxs, outR, err := c.Finalize(chainConfig, header, state, txs, uncles, receipts, e, chain, syscall)
-	if err != nil {
-		return nil, nil, nil, err
-	}
+	// No block rewards in PoA, so the state remains as is and uncles are dropped
+	header.UncleHash = types.CalcUncleHash(nil)
+
 	// Assemble and return the final block for sealing
 	return types.NewBlock(header, txs, nil, receipts, withdrawals), txs, receipts, nil
 }

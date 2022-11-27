@@ -162,17 +162,14 @@ func (h *Header) EncodingSize() int {
 	if h.BaseFee != nil {
 		encodingSize++
 		encodingSize += rlp.BigIntLenExcludingHead(h.BaseFee)
-		if h.WithdrawalsHash != nil {
-			encodingSize += 33
-			if h.ExcessDataGas != nil {
-				encodingSize++
-				encodingSize += rlp.BigIntLenExcludingHead(h.ExcessDataGas)
-			}
-		}
 	}
 
 	if h.WithdrawalsHash != nil {
 		encodingSize += 33
+	}
+	if h.ExcessDataGas != nil {
+		encodingSize++
+		encodingSize += rlp.BigIntLenExcludingHead(h.ExcessDataGas)
 	}
 
 	if h.Verkle {
@@ -301,26 +298,9 @@ func (h *Header) EncodeRLP(w io.Writer) error {
 		}
 	}
 
-	// Write the optional fields. If any one of them is nil then don't write any subsequent ones as
-	// this will confuse the decoder. TODO: should we error out if we have non-nil values following
-	// nil ones?
 	if h.BaseFee != nil {
 		if err := rlp.EncodeBigInt(h.BaseFee, w, b[:]); err != nil {
 			return err
-		}
-		if h.WithdrawalsHash != nil {
-			b[0] = 128 + 32
-			if _, err := w.Write(b[:1]); err != nil {
-				return err
-			}
-			if _, err := w.Write(h.WithdrawalsHash.Bytes()); err != nil {
-				return err
-			}
-			if h.ExcessDataGas != nil {
-				if err := rlp.EncodeBigInt(h.ExcessDataGas, w, b[:]); err != nil {
-					return err
-				}
-			}
 		}
 	}
 
@@ -330,6 +310,12 @@ func (h *Header) EncodeRLP(w io.Writer) error {
 			return err
 		}
 		if _, err := w.Write(h.WithdrawalsHash.Bytes()); err != nil {
+			return err
+		}
+	}
+
+	if h.ExcessDataGas != nil {
+		if err := rlp.EncodeBigInt(h.ExcessDataGas, w, b[:]); err != nil {
 			return err
 		}
 	}
@@ -524,6 +510,7 @@ type headerMarshaling struct {
 
 // SetExcessDataGas sets the excess_data_gas field in the header
 func (h *Header) SetExcessDataGas(v *big.Int) {
+	fmt.Println("Setting excess data gas:", v)
 	h.ExcessDataGas = new(big.Int)
 	if v != nil {
 		h.ExcessDataGas.Set(v)
@@ -1080,14 +1067,6 @@ func CopyHeader(h *Header) *Header {
 		cpy.BaseFee = new(big.Int)
 		cpy.BaseFee.Set(h.BaseFee)
 	}
-	if h.WithdrawalsHash != nil {
-		cpy.WithdrawalsHash = new(common.Hash)
-		*cpy.WithdrawalsHash = *h.WithdrawalsHash
-	}
-	if h.ExcessDataGas != nil {
-		cpy.ExcessDataGas = new(big.Int)
-		cpy.ExcessDataGas.Set(h.ExcessDataGas)
-	}
 	if len(h.Extra) > 0 {
 		cpy.Extra = make([]byte, len(h.Extra))
 		copy(cpy.Extra, h.Extra)
@@ -1098,7 +1077,11 @@ func CopyHeader(h *Header) *Header {
 	}
 	if h.WithdrawalsHash != nil {
 		cpy.WithdrawalsHash = new(common.Hash)
-		cpy.WithdrawalsHash.SetBytes(h.WithdrawalsHash.Bytes())
+		*cpy.WithdrawalsHash = *h.WithdrawalsHash
+	}
+	if h.ExcessDataGas != nil {
+		cpy.ExcessDataGas = new(big.Int)
+		cpy.ExcessDataGas.Set(h.ExcessDataGas)
 	}
 	return &cpy
 }

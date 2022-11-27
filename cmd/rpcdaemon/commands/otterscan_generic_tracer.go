@@ -51,7 +51,6 @@ func (api *OtterscanAPIImpl) genericTracer(dbtx kv.Tx, ctx context.Context, bloc
 	header := block.Header()
 	rules := chainConfig.Rules(block.NumberU64(), header.Time)
 	excessDataGas := header.ParentExcessDataGas(getHeader)
-	rules := chainConfig.Rules(block.NumberU64(), header.Time)
 	for idx, tx := range block.Transactions() {
 		ibs.Prepare(tx.Hash(), block.Hash(), idx)
 
