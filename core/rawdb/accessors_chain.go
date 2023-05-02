@@ -404,7 +404,7 @@ func CanonicalTxnByID(db kv.Getter, id uint64, blockHash libcommon.Hash, transac
 	if len(v) == 0 {
 		return nil, nil
 	}
-	txn, err := types.DecodeTransaction(v)
+	txn, err := types.DecodeTransaction(v, false)
 	if err != nil {
 		return nil, err
 	}
@@ -422,7 +422,7 @@ func CanonicalTransactions(db kv.Getter, baseTxId uint64, amount uint32) ([]type
 
 	if err := db.ForAmount(kv.EthTx, txIdKey, amount, func(k, v []byte) error {
 		var decodeErr error
-		if txs[i], decodeErr = types.UnmarshalTransactionFromBinary(v); decodeErr != nil {
+		if txs[i], decodeErr = types.DecodeTransaction(v, false); decodeErr != nil {
 			return decodeErr
 		}
 		i++
@@ -445,7 +445,7 @@ func NonCanonicalTransactions(db kv.Getter, baseTxId uint64, amount uint32) ([]t
 
 	if err := db.ForAmount(kv.NonCanonicalTxs, txIdKey, amount, func(k, v []byte) error {
 		var decodeErr error
-		if txs[i], decodeErr = types.DecodeTransaction(v); decodeErr != nil {
+		if txs[i], decodeErr = types.DecodeTransaction(v, false); decodeErr != nil {
 			return decodeErr
 		}
 		i++
